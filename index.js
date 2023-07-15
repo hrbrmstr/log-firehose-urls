@@ -8,8 +8,6 @@ const METHOD = 'com.atproto.sync.subscribeRepos';
 const COLLECTION = 'app.bsky.feed.post';
 const CREATE_ACTION = 'create';
 
-const args = process.argv.slice(2);
-
 const searchString = "https://"
 
 // start subscription to the firehost
