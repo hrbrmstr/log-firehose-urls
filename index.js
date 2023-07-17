@@ -1,5 +1,7 @@
 import sqlite3 from 'sqlite3';
 
+import getUrls from 'get-urls';
+
 import { Subscription } from '@atproto/xrpc-server';
 import { cborToLexRecord, readCar } from '@atproto/repo';
 
@@ -7,6 +9,8 @@ const SERVICE = 'bsky.social';
 const METHOD = 'com.atproto.sync.subscribeRepos';
 const COLLECTION = 'app.bsky.feed.post';
 const CREATE_ACTION = 'create';
+
+const args = process.argv.slice(2);
 
 const searchString = "https://"
 
@@ -47,26 +51,25 @@ const handleEvent = async (event) => {
       const coll = op.path.split('/')[ 0 ];
       if (coll !== COLLECTION) continue;
 
-      if ((args.length === 0) || (rec.text.toLowerCase().includes(searchString))) {
-
+      if (rec.text.toLowerCase().includes(searchString)) {
         // Extract URLs and store in the database
-        const urlRegex = /https?:\/\/[^\s]+/g;
-        let match;
-        while ((match = urlRegex.exec(rec.text)) !== null) {
-          const url = match[ 0 ];
+        const urls = getUrls(rec.text)
+          
+        urls.forEach(( url ) => {
           db.run(`
-            INSERT INTO urls(url) VALUES(?)
-            ON CONFLICT(url) DO UPDATE SET count=count+1;
-          `, [ url ], function (err) {
+          INSERT INTO urls(url) VALUES(?)
+          ON CONFLICT(url) DO UPDATE SET count=count+1;
+        `, [ url ], function (err) {
             if (err) {
               return console.error(err.message);
             }
             console.info(`URL: ${url}, Rows inserted: ${this.changes}`);
           });
-        }
+        })
 
       }
     }
+
   } catch {
     // Add error handling here
   }
